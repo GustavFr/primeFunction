@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <iomanip>
 
-#define OPTIONS 10
+#define OPTIONS 7
 #define ORIGIN_COUNT 5
 
 using namespace std;
@@ -17,12 +17,12 @@ using namespace std;
 //double origin[ORIGIN_COUNT] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367,373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461,463,467,479,487,491,499,503,509,521,523,541};
 vector<int> origin = {2,3,5,7,11};
 
+
 double parse(char *formula);
 
 struct node{
     double error = 0;
     string f = "";
-    bool check = 0;
     int level = 1;
     int localError = 0;
     double data[ORIGIN_COUNT] = {0};
@@ -55,9 +55,9 @@ void calc(node *root){
         strcpy(str, tmp.c_str());
         root->data[i] = parse(str);
         root->localError += abs(root->data[i] - origin[i]);
-        root->error += abs(root->data[i] - origin[i]);
+
     }
-    root->error += root->level;
+    root->error = root->localError + (root->level*2);
 }
 
 void addNode(node *root, string f){
@@ -69,7 +69,6 @@ void addNode(node *root, string f){
             root->variants[i] = newNode;
             calc(newNode);
             glob.push_back(newNode);
-            root->check = 1;
             break;
         }
     }
@@ -85,26 +84,29 @@ int main()
     //int x;
     // cin >>x;
 
-    vector <string> varinats = {"+x","-x","*x","/x","+1","-1","+2","-2","*2","/2"};
+    vector <string> varinats = {"+x","-x","*x","+1","-1","%2","%x"};
 
     node *root = new node();
     root->f = "x";
-    root->check = 1;
     root->localError = 10000000;
     root->error = 10000000;
 
     glob.push_back(root);
 
 label:
-    int min = glob[0]->error, index = 0;
+    int min = 10000000, index = 0;
     for(int k = 1; k < glob.size(); ++k){
-        if(min > glob[k]->error && glob[k]->check == 0) {
+        if(min > glob[k]->error) {
             min = glob[k]->error;
             index = k;
         }
     }
 
-    cout << "[" << glob[index]->localError << "]" << " " << glob[index]->f << " " << glob[index]->level << endl;
+    cout << "Error: " << glob[index]->localError << "\n"
+         << "Func: " << glob[index]->f << "\n"
+         << "Level: " << glob[index]->level << "\n"
+         << "Glob error: " << glob[index]->error << "\n"
+         << "-------------------------" << endl;
 
     if(glob[index]->localError == 0) {
         cout << "STOP";
@@ -117,13 +119,12 @@ label:
 
     }
 
-    for(int i = 0; i < glob.size(); ++i){
-        if(glob[i]->check == 1){
-            glob.erase(glob.begin() + i);
 
-        }
+    delete glob[index];
+    glob.erase(glob.begin() + index);
 
-    }
+
+
     goto label;
 
     return 0;
@@ -140,7 +141,7 @@ double parse(char *formula){
 
     map< char, pair< int, function<int (int, int)> > > m =
     {{'+', {1, [](int a, int b){return a+b;}}},{'-', {1, [](int a, int b){return a-b;}}},
-    {'*', {2, [](int a, int b){return a*b;}}},{'/', {2, [](int a, int b){return a/b*1.0;}}}};
+    {'*', {2, [](int a, int b){return a*b;}}},{'%', {2, [](int a, int b){return a%b;}}}};
 
     const int order = 2; int level = 0;
     for (char* sp = formula;; ++sp) {
