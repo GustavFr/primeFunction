@@ -9,13 +9,14 @@
 #include <stdlib.h>
 #include <iomanip>
 
-#define OPTIONS 7
+#define OPTIONS 11
 #define ORIGIN_COUNT 5
 
 using namespace std;
 
 //double origin[ORIGIN_COUNT] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367,373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461,463,467,479,487,491,499,503,509,521,523,541};
 vector<int> origin = {2,3,5,7,11};
+//vector<int> origin = {2,4,8,16,32};
 
 
 double parse(char *formula);
@@ -84,10 +85,10 @@ int main()
     //int x;
     // cin >>x;
 
-    vector <string> varinats = {"+x","-x","*x","+1","-1","%2","%x"};
+    vector <string> varinats = {"+x","-x","*x","+1","-1","^2","^x","%2","%x","/2","/x"};
 
     node *root = new node();
-    root->f = "x";
+    root->f = "0";
     root->localError = 10000000;
     root->error = 10000000;
 
@@ -95,12 +96,14 @@ int main()
 
 label:
     int min = 10000000, index = 0;
-    for(int k = 1; k < glob.size(); ++k){
+    for(size_t k = 1; k < glob.size(); ++k){
         if(min > glob[k]->error) {
             min = glob[k]->error;
             index = k;
         }
     }
+
+
 
     cout << "Error: " << glob[index]->localError << "\n"
          << "Func: " << glob[index]->f << "\n"
@@ -114,7 +117,7 @@ label:
         cin >> a;
     }
 
-    for(int i = 0; i < varinats.size(); ++i){
+    for(size_t i = 0; i < varinats.size(); ++i){
         addNode(glob[index], varinats[i]);
 
     }
@@ -141,7 +144,8 @@ double parse(char *formula){
 
     map< char, pair< int, function<int (int, int)> > > m =
     {{'+', {1, [](int a, int b){return a+b;}}},{'-', {1, [](int a, int b){return a-b;}}},
-    {'*', {2, [](int a, int b){return a*b;}}},{'%', {2, [](int a, int b){return a%b;}}}};
+    {'*', {2, [](int a, int b){return a*b;}}},{'^', {2, [](int a, int b){return pow(a,b);}}},
+    {'%', {2, [](int a, int b){return a%b;}}},{'/', {2, [](int a, int b){return a/b;}}}};
 
     const int order = 2; int level = 0;
     for (char* sp = formula;; ++sp) {
