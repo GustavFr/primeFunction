@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <functional>
@@ -12,20 +13,24 @@
 using namespace std;
 
 //double origin[ORIGIN_COUNT] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367,373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461,463,467,479,487,491,499,503,509,521,523,541};
+//vector<int> origin = { 2, 3, 5, 7, 11, 13};
+
+vector<string> sign = { "+", "-", "*", "/", "%", "^" };
+vector<string> num = { "x", "2", "(x*2)", "(x*x)", "(x+1)", "((x%2))", "1" };
+const int N = (sign.size() * num.size()) - 4;
+vector<string> varinats;
 vector<int> origin = { 2, 3, 5, 7, 11 };
+//vector<int> origin = { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 
-vector<string> varinats = { "+x", "-x", "*x", "+1", "-1", "^2", "^x", "%2", "%x", "/2", "/x" };
-
-//vector<int> origin = {2,4,8,16,32};
 
 double parse(char* formula);
 
 struct node {
-    int error = 0;
+    unsigned error = 0;
     string f = "";
     int level = 1;
     int localError = 0;
-    node** variants = (node**)malloc(sizeof(node*) *  varinats.size());
+    node** variants = (node**)malloc(sizeof(node*) * N);
 };
 
 vector<node*> glob;
@@ -50,14 +55,15 @@ std::string StringReplacer(const std::string& inputStr, const std::string& src, 
 
 void calc(node* root)
 {
-    for (int i = 0; i < origin.size(); ++i) {
+    for (size_t i = 0; i < origin.size(); ++i) {
         string tmp = StringReplacer(root->f, "x", std::to_string(i + 1));
         char str[tmp.size() + 1];
         strcpy(str, tmp.c_str());
+
         int x = parse(str);
         root->localError += abs(x - origin[i]);
     }
-    root->error = root->localError + root->level ;
+    root->error = root->localError + root->level;
 }
 
 void addNode(node* root, string f, int i)
@@ -70,31 +76,43 @@ void addNode(node* root, string f, int i)
     glob.push_back(newNode);
 }
 
+class cmp {
+public:
+    bool operator()(const node* a, const node* b)
+    {
+        return a->error < b->error;
+    }
+} compare;
+
 int main()
 {
 
-    //for(int i = 1; i < 10; ++i){
-    // cout << f(i) << endl;
-    // }
+    for (size_t j = 0; j < num.size(); ++j) {
+        for (size_t i = 0; i < sign.size(); ++i) {
+            if (varinats.size() < N) {
+                varinats.push_back(sign[i] + num[j]);
+            }
+        }
+    }
 
-    //int x;
-    // cin >>x;
+    //            for(int i = 1; i < 10; ++i){
+    //             cout << f(i) << endl;
+    //             }
+
+    //            int x;
+    //             cin >>x;
 
     node* root = new node();
-    root->f = "0";
+    root->f = "x";
     root->localError = 10000000;
     root->error = 10000000;
 
     glob.push_back(root);
 
 label:
-    int min = 10000000, index = 0;
-    for (size_t k = 1; k < glob.size(); ++k) {
-        if (min > glob[k]->error) {
-            min = glob[k]->error;
-            index = k;
-        }
-    }
+    int index = 0;
+
+    std::sort(glob.begin(), glob.end(), compare);
 
     cout << "Error: " << glob[index]->localError << "\n"
          << "Func: " << glob[index]->f << "\n"
@@ -108,7 +126,9 @@ label:
         cin >> a;
     }
 
-    for (size_t i = 0; i < varinats.size(); ++i) {
+    printf("\e[1;1H\e[2J");
+
+    for (size_t i = 0; i < N; ++i) {
         addNode(glob[index], varinats[i], i);
     }
 
@@ -129,8 +149,8 @@ double parse(char* formula)
     auto p = [&s, &ops](function<int(int, int)>& f) {double r=s.top();s.pop();r=f(s.top(),r);s.pop();s.push(r);ops.pop(); };
 
     map<char, pair<int, function<int(int, int)>>> m = { { '+', { 1, [](int a, int b) { return a + b; } } }, { '-', { 1, [](int a, int b) { return a - b; } } },
-        { '*', { 2, [](int a, int b) { return a * b; } } }, { '^', { 2, [](int a, int b) { return pow(a, b); } } },
-        { '%', { 2, [](int a, int b) { return a % b; } } }, { '/', { 2, [](int a, int b) { return a / b; } } } };
+        { '*', { 2, [](int a, int b) { return a * b; } } }, { '/', { 2, [](int a, int b) { return a / b; } } } ,
+       { '%', { 2, [](int a, int b) { return a % b; } } }, { '^', { 2, [](int a, int b) { return pow(a , b); } } } };
 
     const int order = 2;
     int level = 0;
